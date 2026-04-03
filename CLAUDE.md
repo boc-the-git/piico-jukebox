@@ -39,5 +39,4 @@ Managed with `uv` via `pyproject.toml`:
 
 ## Known Issues
 
-- Line 48: `logger.error` call has incorrect multi-argument syntax
 - TODO on line 46: Error response handling needs testing

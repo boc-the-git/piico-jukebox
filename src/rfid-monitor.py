@@ -45,7 +45,7 @@ while True:
         else:
             # TODO: What does a failure actually look like? Break URL to test..
             logger.error(f"Webhook post failed with status code {response.status_code}")
-            logger.error("Response text:", response.text)
+            logger.error(f"Response text: {response.text}")
 
         sleep(8) # Sleep for 8s, so we don't spam messages when a card is held there
 
