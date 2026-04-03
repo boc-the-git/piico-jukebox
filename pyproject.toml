@@ -1,0 +1,9 @@
+[project]
+name = "piico-jukebox"
+version = "0.1.0"
+description = "RFID monitoring application for Raspberry Pi that triggers Home Assistant webhooks"
+requires-python = ">=3.11"
+dependencies = [
+    "piicodev>=1.11.0",
+    "requests>=2.33.1",
+]

@@ -4,8 +4,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
-COPY requirements.txt /tmp/
-RUN pip install --no-compile --no-cache-dir --requirement /tmp/requirements.txt
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+COPY pyproject.toml .
+RUN uv pip install --system --no-cache .
 
 COPY src ./src
 

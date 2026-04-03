@@ -33,12 +33,11 @@ Deployed as a Docker container with I2C device passthrough to Raspberry Pi hardw
 
 ## Dependencies
 
+Managed with `uv` via `pyproject.toml`:
 - `piicodev` - PiicoDev RFID hardware interface
 - `requests` - HTTP client for webhook calls
-- `paho-mqtt` - Imported but currently unused
 
 ## Known Issues
 
-- Webhook endpoint is hardcoded (`<your ip/hostname>:8123`)
-- Line 41: `logger.error` call has incorrect multi-argument syntax
-- TODO on line 39: Error response handling needs testing
+- Line 48: `logger.error` call has incorrect multi-argument syntax
+- TODO on line 46: Error response handling needs testing
