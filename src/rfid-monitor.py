@@ -3,6 +3,8 @@ from PiicoDev_RFID import PiicoDev_RFID
 from time import sleep
 import requests
 import logging
+import os
+import sys
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
@@ -10,6 +12,11 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger('rfid-monitor')
+
+WEBHOOK_URL = os.environ.get('WEBHOOK_URL')
+if not WEBHOOK_URL:
+    logger.error("WEBHOOK_URL environment variable is not set")
+    sys.exit(1)
 
 rfid = PiicoDev_RFID()   # Initialise the RFID module
 
@@ -27,7 +34,7 @@ while True:
         logger.debug('id: '+id)
 
         id_without_colons = id.replace(':','')
-        url = "http://<your ip/hostname>:8123/api/webhook/nfc-tag-scanned-"+id_without_colons
+        url = f"{WEBHOOK_URL}{id_without_colons}"
         logger.info('url: '+url)
 
         response = requests.post(url)

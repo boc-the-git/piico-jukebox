@@ -6,6 +6,7 @@ services:
     image: boc/jukebox-python:latest
     environment:
       - TZ=Australia/Melbourne
+      - WEBHOOK_URL=http://<your ip/hostname>:8123/api/webhook/nfc-tag-scanned-
     devices:
       - "/dev/i2c-1:/dev/i2c-1:rwm"
     restart: unless-stopped
