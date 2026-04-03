@@ -1,0 +1,11 @@
+# Make sure you've installed raspi-config and enabled i2c!!
+
+services:
+  jukebox:
+    container_name: jukebox
+    image: boc/jukebox-python:latest
+    environment:
+      - TZ=Australia/Melbourne
+    devices:
+      - "/dev/i2c-1:/dev/i2c-1:rwm"
+    restart: unless-stopped
