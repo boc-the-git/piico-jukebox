@@ -1,10 +1,11 @@
-from PiicoDev_RFID import PiicoDev_RFID
-# from PiicoDev_Unified import sleep_ms
-from time import sleep
-import requests
 import logging
 import os
+import re
 import sys
+from time import sleep
+
+import requests
+from PiicoDev_RFID import PiicoDev_RFID
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
@@ -25,25 +26,33 @@ logger.info('RFID Monitor running')
 while True:
     if rfid.tagPresent():    # if an RFID tag is present
         logger.info('Tag detected. Reading..')
-        id = rfid.readID()   # get the id
+        tag_id = rfid.readID()
 
-        if len(id) == 0:
+        if len(tag_id) == 0:
             logger.info('Card not read successfully. Ensure to hold it there for a moment to allow a successful read.')
             continue
 
-        logger.debug('id: '+id)
+        logger.debug(f'tag_id: {tag_id}')
 
-        id_without_colons = id.replace(':','')
-        url = f"{WEBHOOK_URL}{id_without_colons}"
-        logger.info('url: '+url)
+        tag_id_clean = tag_id.replace(':', '')
 
-        response = requests.post(url)
+        if not re.fullmatch(r'[0-9A-Fa-f]+', tag_id_clean):
+            logger.warning(f'Invalid tag ID format: {tag_id}')
+            continue
 
-        # Check the status code of the response
+        url = f"{WEBHOOK_URL}{tag_id_clean}"
+        logger.info(f'url: {url}')
+
+        try:
+            response = requests.post(url, timeout=10)
+        except requests.RequestException as e:
+            logger.error(f"Webhook request failed: {e}")
+            sleep(8)
+            continue
+
         if response.status_code == 200:
             logger.info("Webhook post was successful!")
         else:
-            # TODO: What does a failure actually look like? Break URL to test..
             logger.error(f"Webhook post failed with status code {response.status_code}")
             logger.error(f"Response text: {response.text}")
 
