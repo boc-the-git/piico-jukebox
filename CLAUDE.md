@@ -37,6 +37,3 @@ Managed with `uv` via `pyproject.toml`:
 - `piicodev` - PiicoDev RFID hardware interface
 - `requests` - HTTP client for webhook calls
 
-## Known Issues
-
-- TODO on line 46: Error response handling needs testing
