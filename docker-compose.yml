@@ -3,7 +3,7 @@
 services:
   jukebox:
     container_name: jukebox
-    image: boc/jukebox-python:latest
+    image: ghcr.io/boc-the-git/piico-jukebox:latest
     environment:
       - TZ=Australia/Melbourne
       - WEBHOOK_URL=http://<your ip/hostname>:8123/api/webhook/nfc-tag-scanned-

@@ -9,8 +9,8 @@ Python-based RFID monitoring application for Raspberry Pi that polls a PiicoDev 
 ## Commands
 
 ```bash
-# Build Docker image
-docker build -t boc/jukebox-python:latest .
+# Pull Docker image
+docker pull ghcr.io/boc-the-git/piico-jukebox
 
 # Run with Docker Compose (production)
 docker-compose up -d

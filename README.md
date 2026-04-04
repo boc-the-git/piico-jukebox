@@ -64,19 +64,13 @@ automation:
 
 ## Running with Docker (Recommended)
 
-Build the image:
-
-```bash
-docker build -t boc/jukebox-python:latest .
-```
-
 Create a `docker-compose.yml` file:
 
 ```yaml
 services:
   jukebox:
     container_name: jukebox
-    image: boc/jukebox-python:latest
+    image: ghcr.io/boc-the-git/piico-jukebox:latest
     environment:
       - TZ=Australia/Melbourne
       - WEBHOOK_URL=http://<your ip/hostname>:8123/api/webhook/nfc-tag-scanned-
