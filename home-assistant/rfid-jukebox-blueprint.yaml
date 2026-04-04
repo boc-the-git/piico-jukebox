@@ -1,0 +1,24 @@
+blueprint:
+  name: RFID Jukebox Action
+  description: Trigger actions when a specific RFID tag is scanned
+  domain: automation
+  input:
+    webhook_id:
+      name: Full Webhook ID
+      description: The complete webhook ID including prefix and tag (e.g., "nfc-tag-scanned-AABBCCDD")
+      selector:
+        text:
+    actions:
+      name: Actions
+      description: Actions to perform when this tag is scanned
+      selector:
+        action: {}
+
+trigger:
+  - platform: webhook
+    webhook_id: !input webhook_id
+    local_only: false
+
+action: !input actions
+
+mode: single
