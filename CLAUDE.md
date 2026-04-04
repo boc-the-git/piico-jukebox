@@ -29,6 +29,12 @@ Single-file application (`src/rfid-monitor.py`) that:
 3. On tag detection, POSTs to Home Assistant webhook with tag ID
 4. Implements 8-second debounce between successful reads
 
+Optional Uptime Kuma heartbeat monitoring:
+- Sends periodic POST requests to configured push monitor URL
+- Time-based intervals (default 60s, configurable via HEARTBEAT_INTERVAL)
+- Failures logged but don't disrupt RFID monitoring
+- Enabled when UPTIME_KUMA_PUSH_URL environment variable is set
+
 Deployed as a Docker container with I2C device passthrough to Raspberry Pi hardware.
 
 ## Dependencies

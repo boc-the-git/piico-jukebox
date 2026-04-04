@@ -2,7 +2,7 @@ import logging
 import os
 import re
 import sys
-from time import sleep
+from time import sleep, time
 
 import requests
 from PiicoDev_RFID import PiicoDev_RFID
@@ -19,7 +19,36 @@ if not WEBHOOK_URL:
     logger.error("WEBHOOK_URL environment variable is not set")
     sys.exit(1)
 
+# Uptime Kuma heartbeat monitoring (optional)
+UPTIME_KUMA_PUSH_URL = os.environ.get('UPTIME_KUMA_PUSH_URL')
+
+if UPTIME_KUMA_PUSH_URL:
+    try:
+        HEARTBEAT_INTERVAL = int(os.environ.get('HEARTBEAT_INTERVAL', '60'))
+    except ValueError:
+        logger.warning("Invalid HEARTBEAT_INTERVAL value, using default of 60 seconds")
+        HEARTBEAT_INTERVAL = 60
+    logger.info(f'Uptime Kuma heartbeat monitoring enabled (interval: {HEARTBEAT_INTERVAL}s)')
+else:
+    HEARTBEAT_INTERVAL = 60  # Default value even when disabled
+    logger.info('Uptime Kuma heartbeat monitoring disabled')
+
+def send_heartbeat():
+    """Send heartbeat to Uptime Kuma. Failures are logged but don't raise exceptions."""
+    try:
+        response = requests.post(UPTIME_KUMA_PUSH_URL, timeout=5)
+        if response.status_code == 200:
+            logger.debug("Heartbeat sent successfully")
+        else:
+            logger.warning(f"Heartbeat failed with status {response.status_code}")
+    except requests.RequestException as e:
+        logger.warning(f"Heartbeat request failed: {e}")
+    except Exception as e:
+        logger.warning(f"Unexpected error sending heartbeat: {e}")
+
 rfid = PiicoDev_RFID()   # Initialise the RFID module
+
+last_heartbeat = 0  # Track last heartbeat time
 
 logger.info('RFID Monitor running')
 
@@ -59,3 +88,10 @@ while True:
         sleep(8) # Sleep for 8s, so we don't spam messages when a card is held there
 
     sleep(0.1)
+
+    # Send heartbeat to Uptime Kuma if configured
+    if UPTIME_KUMA_PUSH_URL:
+        current_time = time()
+        if current_time - last_heartbeat >= HEARTBEAT_INTERVAL:
+            send_heartbeat()
+            last_heartbeat = current_time

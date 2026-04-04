@@ -17,6 +17,29 @@ Example: `WEBHOOK_URL=http://<your ip/hostname>:8123/api/webhook/nfc-tag-scanned
 When a tag with ID `AABBCCDD` is scanned, a POST request is made to:
 `http://<your ip/hostname>:8123/api/webhook/nfc-tag-scanned-AABBCCDD`
 
+### Optional: Uptime Kuma Monitoring
+
+The application supports push-based heartbeat monitoring with Uptime Kuma.
+
+**Environment Variables:**
+- `UPTIME_KUMA_PUSH_URL`: Your Uptime Kuma push monitor URL (optional)
+- `HEARTBEAT_INTERVAL`: Heartbeat interval in seconds (optional, default: 60)
+
+**Setup:**
+1. In Uptime Kuma, create a new monitor with type "Push"
+2. Copy the push URL provided
+3. Add to your docker-compose.yml:
+   ```yaml
+   environment:
+     - UPTIME_KUMA_PUSH_URL=https://uptime.example.com/api/push/YOUR_PUSH_KEY
+     - HEARTBEAT_INTERVAL=60
+   ```
+4. Restart the container
+
+The application will send heartbeat pings every 60 seconds (or your configured interval). If heartbeats stop, Uptime Kuma will alert you that the RFID monitor is down.
+
+**Note:** Heartbeat failures are logged but won't affect RFID monitoring functionality.
+
 ## Home Assistant Setup
 
 ### Option 1: Using the Blueprint (Recommended)
