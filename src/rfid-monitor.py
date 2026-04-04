@@ -28,10 +28,23 @@ if UPTIME_KUMA_PUSH_URL:
     except ValueError:
         logger.warning("Invalid HEARTBEAT_INTERVAL value, using default of 60 seconds")
         HEARTBEAT_INTERVAL = 60
-    logger.info(f'Uptime Kuma heartbeat monitoring enabled (interval: {HEARTBEAT_INTERVAL}s)')
 else:
     HEARTBEAT_INTERVAL = 60  # Default value even when disabled
-    logger.info('Uptime Kuma heartbeat monitoring disabled')
+
+# Log configuration summary
+logger.info('=' * 60)
+logger.info('RFID Monitor Configuration')
+logger.info('=' * 60)
+logger.info(f'WEBHOOK_URL: {WEBHOOK_URL}')
+if UPTIME_KUMA_PUSH_URL:
+    logger.info(f'Uptime Kuma heartbeat: ENABLED')
+    logger.info(f'  Push URL: {UPTIME_KUMA_PUSH_URL}')
+    logger.info(f'  Heartbeat interval: {HEARTBEAT_INTERVAL}s')
+else:
+    logger.info(f'Uptime Kuma heartbeat: DISABLED')
+logger.info(f'RFID polling interval: 100ms')
+logger.info(f'Tag read debounce: 8s')
+logger.info('=' * 60)
 
 def send_heartbeat():
     """Send heartbeat to Uptime Kuma. Failures are logged but don't raise exceptions."""
