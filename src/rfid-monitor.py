@@ -54,6 +54,7 @@ def send_heartbeat():
             logger.debug("Heartbeat sent successfully")
         else:
             logger.warning(f"Heartbeat failed with status {response.status_code}")
+            logger.warning(f"Response: {response.text}")
     except requests.RequestException as e:
         logger.warning(f"Heartbeat request failed: {e}")
     except Exception as e:
