@@ -49,7 +49,7 @@ logger.info('=' * 60)
 def send_heartbeat():
     """Send heartbeat to Uptime Kuma. Failures are logged but don't raise exceptions."""
     try:
-        response = requests.post(UPTIME_KUMA_PUSH_URL, timeout=5)
+        response = requests.get(UPTIME_KUMA_PUSH_URL, timeout=5)
         if response.status_code == 200:
             logger.debug("Heartbeat sent successfully")
         else:
