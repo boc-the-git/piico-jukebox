@@ -7,7 +7,7 @@ services:
     environment:
       - TZ=Australia/Melbourne
       - WEBHOOK_URL=http://<your ip/hostname>:8123/api/webhook/nfc-tag-scanned-
-      # Optional: Uptime Kuma push monitoring
+      # Optional: Uptime Kuma heartbeat monitoring (GET requests)
       # - UPTIME_KUMA_PUSH_URL=https://uptime.example.com/api/push/YOUR_PUSH_KEY
       # - HEARTBEAT_INTERVAL=60  # seconds (default: 60)
     devices:

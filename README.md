@@ -36,7 +36,7 @@ The application supports push-based heartbeat monitoring with Uptime Kuma.
    ```
 4. Restart the container
 
-The application will send heartbeat pings every 60 seconds (or your configured interval). If heartbeats stop, Uptime Kuma will alert you that the RFID monitor is down.
+The application will send GET request heartbeat pings every 60 seconds (or your configured interval). If heartbeats stop, Uptime Kuma will alert you that the RFID monitor is down.
 
 **Note:** Heartbeat failures are logged but won't affect RFID monitoring functionality.
 
