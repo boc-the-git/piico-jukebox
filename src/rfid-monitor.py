@@ -37,6 +37,17 @@ logger.info('=' * 60)
 # Shutdown flag for graceful termination
 shutdown_requested = False
 
+# Health check file for Docker
+HEALTH_FILE = config.health_file_path
+
+
+def update_health_status():
+    """Write current timestamp to health file for Docker health checks."""
+    try:
+        HEALTH_FILE.write_text(str(int(time())))
+    except Exception as e:
+        logger.warning(f"Failed to update health status: {e}")
+
 
 def signal_handler(signum, frame):
     """Handle shutdown signals (SIGTERM, SIGINT) gracefully."""
@@ -72,6 +83,9 @@ signal.signal(signal.SIGINT, signal_handler)
 last_heartbeat = 0  # Track last heartbeat time
 
 logger.info('RFID Monitor running')
+
+# Initial health status
+update_health_status()
 
 while not shutdown_requested:
     if rfid.tagPresent():    # if an RFID tag is present
@@ -109,6 +123,9 @@ while not shutdown_requested:
         sleep(8) # Sleep for 8s, so we don't spam messages when a card is held there
 
     sleep(0.1)
+
+    # Update health status for Docker health check
+    update_health_status()
 
     # Send heartbeat to Uptime Kuma if configured
     if config.uptime_kuma_push_url:

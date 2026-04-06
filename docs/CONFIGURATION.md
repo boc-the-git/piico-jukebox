@@ -60,6 +60,31 @@ HEARTBEAT_INTERVAL=5000  # too high (maximum is 3600)
 HEARTBEAT_INTERVAL=abc   # not a number
 ```
 
+### `HEALTH_FILE_PATH` (optional)
+Custom path for Docker health check status file.
+
+**Validation:**
+- Validated as a Path type in main application
+- Must be a valid file path string
+- Default: `/tmp/rfid-monitor-health`
+
+**Use cases:**
+- Debugging health checks by using a persistent volume
+- Custom monitoring scripts that read the health file
+- Avoiding `/tmp` in restricted environments
+
+**Examples:**
+```bash
+# Default behavior (not set)
+# Uses /tmp/rfid-monitor-health
+
+# Custom path
+HEALTH_FILE_PATH=/app/data/health-status
+HEALTH_FILE_PATH=/var/run/rfid-health
+```
+
+**Note:** The main application loads this via the Config validator. The health check script (`healthcheck.py`) reads it directly from the environment to remain lightweight.
+
 ## Configuration Methods
 
 ### Method 1: Environment Variables (Docker Compose)
@@ -68,6 +93,7 @@ environment:
   - WEBHOOK_URL=http://homeassistant.local:8123/api/webhook/nfc-tag-scanned-
   - UPTIME_KUMA_PUSH_URL=https://uptime.example.com/api/push/abc123
   - HEARTBEAT_INTERVAL=60
+  - HEALTH_FILE_PATH=/tmp/rfid-monitor-health
 ```
 
 ### Method 2: .env File (Development)
@@ -76,6 +102,7 @@ Create a `.env` file in the project root:
 WEBHOOK_URL=http://homeassistant.local:8123/api/webhook/nfc-tag-scanned-
 UPTIME_KUMA_PUSH_URL=https://uptime.example.com/api/push/abc123
 HEARTBEAT_INTERVAL=60
+HEALTH_FILE_PATH=/tmp/rfid-monitor-health
 ```
 
 Use `.env.example` as a template.
@@ -85,6 +112,7 @@ Use `.env.example` as a template.
 export WEBHOOK_URL=http://homeassistant.local:8123/api/webhook/nfc-tag-scanned-
 export UPTIME_KUMA_PUSH_URL=https://uptime.example.com/api/push/abc123
 export HEARTBEAT_INTERVAL=60
+export HEALTH_FILE_PATH=/tmp/rfid-monitor-health
 python src/rfid-monitor.py
 ```
 

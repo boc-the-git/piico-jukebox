@@ -1,6 +1,7 @@
 """Configuration management with validation for RFID monitor."""
 
 import sys
+from pathlib import Path
 from typing import Optional
 
 from pydantic import Field, HttpUrl, field_validator
@@ -32,6 +33,11 @@ class Config(BaseSettings):
         description="Interval in seconds between heartbeat checks",
         ge=10,  # Minimum 10 seconds
         le=3600,  # Maximum 1 hour
+    )
+
+    health_file_path: Path = Field(
+        default=Path("/tmp/rfid-monitor-health"),
+        description="Path to health check status file for Docker monitoring",
     )
 
     @field_validator("webhook_url")

@@ -17,6 +17,16 @@ docker-compose up -d
 
 # Run directly (development)
 python src/rfid-monitor.py
+
+# Check container health status
+docker ps  # Look for "(healthy)" or "(unhealthy)"
+docker inspect --format='{{.State.Health.Status}}' jukebox
+
+# View health check logs
+docker inspect jukebox | jq '.[0].State.Health.Log'
+
+# Run health check manually
+docker exec jukebox python /app/src/healthcheck.py
 ```
 
 No test or lint commands are currently configured.
@@ -28,14 +38,16 @@ Main application (`src/rfid-monitor.py`) with configuration module (`src/config.
 2. Registers signal handlers for graceful shutdown (SIGTERM, SIGINT)
 3. Initializes PiicoDev RFID hardware via I2C (`/dev/i2c-1`)
 4. Polls for RFID tags in main loop (100ms hardware polling)
-5. On tag detection, POSTs to Home Assistant webhook with tag ID
-6. Implements 8-second debounce between successful reads
-7. On shutdown signal, exits loop cleanly and sends final heartbeat
+5. Updates health status file every iteration for Docker health checks
+6. On tag detection, POSTs to Home Assistant webhook with tag ID
+7. Implements 8-second debounce between successful reads
+8. On shutdown signal, exits loop cleanly and sends final heartbeat
 
 Configuration validation:
 - Required: `WEBHOOK_URL` - must be valid HTTP/HTTPS URL
 - Optional: `UPTIME_KUMA_PUSH_URL` - must be valid HTTP/HTTPS URL if provided
 - Optional: `HEARTBEAT_INTERVAL` - must be 10-3600 seconds (default: 60)
+- Optional: `HEALTH_FILE_PATH` - path for health check file (default: `/tmp/rfid-monitor-health`)
 - Application exits immediately with clear error if validation fails
 
 Optional Uptime Kuma heartbeat monitoring:
@@ -50,6 +62,13 @@ Graceful shutdown:
 - Sends final heartbeat to Uptime Kuma if configured
 - Logs shutdown process for observability
 - Exits with code 0 on successful shutdown
+
+Docker health check (`src/healthcheck.py`):
+- Main loop writes timestamp to health file every iteration
+- Health check script verifies timestamp is recent (< 30 seconds old)
+- Runs every 30 seconds with 3 retries before marking unhealthy
+- Allows Docker/orchestration tools to detect and restart frozen containers
+- Configurable health file path via `HEALTH_FILE_PATH` env var (default: `/tmp/rfid-monitor-health`)
 
 Deployed as a Docker container with I2C device passthrough to Raspberry Pi hardware.
 
