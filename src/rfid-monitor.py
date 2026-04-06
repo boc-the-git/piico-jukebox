@@ -24,6 +24,7 @@ logger.info('=' * 60)
 logger.info('RFID Monitor Configuration')
 logger.info('=' * 60)
 logger.info(f'WEBHOOK_URL: {config.webhook_url}')
+logger.info(f'Webhook retry: max {config.webhook_max_retries} attempts, {config.webhook_retry_delay}s initial delay')
 if config.uptime_kuma_push_url:
     logger.info(f'Uptime Kuma heartbeat: ENABLED')
     logger.info(f'  Push URL: {config.uptime_kuma_push_url}')
@@ -57,6 +58,83 @@ def signal_handler(signum, frame):
     shutdown_requested = True
 
 
+def is_transient_error(exception):
+    """Determine if an error is transient and should be retried.
+
+    Transient errors: Network timeouts, connection errors, temporary server issues.
+    Fatal errors: Bad requests, authentication failures, not found errors.
+    """
+    if isinstance(exception, requests.exceptions.Timeout):
+        return True
+    if isinstance(exception, requests.exceptions.ConnectionError):
+        return True
+    if isinstance(exception, requests.exceptions.HTTPError):
+        # Retry on 5xx server errors, not on 4xx client errors
+        if hasattr(exception, 'response') and exception.response is not None:
+            return 500 <= exception.response.status_code < 600
+        return True
+    return False
+
+
+def send_webhook_with_retry(url, tag_id):
+    """Send webhook with exponential backoff retry logic.
+
+    Args:
+        url: Full webhook URL to POST to
+        tag_id: Tag ID for logging purposes
+
+    Returns:
+        True if successful, False otherwise
+    """
+    max_retries = config.webhook_max_retries
+    retry_delay = config.webhook_retry_delay
+
+    for attempt in range(max_retries + 1):
+        try:
+            response = requests.post(str(url), timeout=10)
+
+            if response.status_code == 200:
+                if attempt > 0:
+                    logger.info(f"Webhook succeeded on attempt {attempt + 1}")
+                else:
+                    logger.info("Webhook post was successful!")
+                return True
+
+            # Handle non-200 status codes
+            if 400 <= response.status_code < 500:
+                # Client error - don't retry
+                logger.error(f"Webhook failed with client error {response.status_code}: {response.text}")
+                return False
+
+            # Server error - may retry
+            if attempt < max_retries:
+                logger.warning(f"Webhook failed with status {response.status_code}, retrying in {retry_delay}s...")
+                sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                logger.error(f"Webhook failed after {max_retries + 1} attempts with status {response.status_code}")
+                return False
+
+        except requests.RequestException as e:
+            if is_transient_error(e):
+                if attempt < max_retries:
+                    logger.warning(f"Transient error ({type(e).__name__}), retrying in {retry_delay}s... (attempt {attempt + 1}/{max_retries + 1})")
+                    sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    logger.error(f"Webhook failed after {max_retries + 1} attempts: {e}")
+                    return False
+            else:
+                # Fatal error - don't retry
+                logger.error(f"Fatal webhook error: {e}")
+                return False
+        except Exception as e:
+            logger.error(f"Unexpected error sending webhook: {e}")
+            return False
+
+    return False
+
+
 def send_heartbeat():
     """Send heartbeat to Uptime Kuma. Failures are logged but don't raise exceptions."""
     if not config.uptime_kuma_push_url:
@@ -74,13 +152,34 @@ def send_heartbeat():
     except Exception as e:
         logger.warning(f"Unexpected error sending heartbeat: {e}")
 
-rfid = PiicoDev_RFID()   # Initialise the RFID module
+def init_rfid():
+    """Initialize RFID hardware with error handling.
+
+    Returns:
+        PiicoDev_RFID object if successful, None otherwise
+    """
+    try:
+        rfid = PiicoDev_RFID()
+        logger.info('RFID hardware initialized successfully')
+        return rfid
+    except Exception as e:
+        logger.error(f"Failed to initialize RFID hardware: {e}")
+        return None
+
+
+# Initialize RFID hardware
+rfid = init_rfid()
+if rfid is None:
+    logger.error("Cannot start without RFID hardware. Exiting.")
+    sys.exit(1)
 
 # Register signal handlers for graceful shutdown
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
 last_heartbeat = 0  # Track last heartbeat time
+rfid_error_count = 0  # Track consecutive RFID errors
+MAX_RFID_ERRORS = 5  # Max consecutive errors before attempting reconnection
 
 logger.info('RFID Monitor running')
 
@@ -88,9 +187,37 @@ logger.info('RFID Monitor running')
 update_health_status()
 
 while not shutdown_requested:
-    if rfid.tagPresent():    # if an RFID tag is present
+    try:
+        tag_present = rfid.tagPresent()
+        rfid_error_count = 0  # Reset error count on successful operation
+    except Exception as e:
+        rfid_error_count += 1
+        logger.error(f"RFID hardware error ({rfid_error_count}/{MAX_RFID_ERRORS}): {e}")
+
+        if rfid_error_count >= MAX_RFID_ERRORS:
+            logger.warning("Too many consecutive RFID errors, attempting to reinitialize hardware...")
+            sleep(2)
+            rfid = init_rfid()
+            if rfid is None:
+                logger.error("RFID reinitialization failed. Waiting 10s before retry...")
+                sleep(10)
+            else:
+                rfid_error_count = 0
+        else:
+            sleep(1)  # Brief delay before retry
+
+        continue
+
+    if tag_present:
         logger.info('Tag detected. Reading..')
-        tag_id = rfid.readID()
+
+        try:
+            tag_id = rfid.readID()
+        except Exception as e:
+            logger.error(f"Failed to read tag: {e}")
+            rfid_error_count += 1
+            sleep(1)
+            continue
 
         if len(tag_id) == 0:
             logger.info('Card not read successfully. Ensure to hold it there for a moment to allow a successful read.')
@@ -107,20 +234,10 @@ while not shutdown_requested:
         url = f"{config.webhook_url}{tag_id_clean}"
         logger.info(f'url: {url}')
 
-        try:
-            response = requests.post(str(url), timeout=10)
-        except requests.RequestException as e:
-            logger.error(f"Webhook request failed: {e}")
-            sleep(8)
-            continue
+        # Send webhook with retry logic
+        send_webhook_with_retry(url, tag_id_clean)
 
-        if response.status_code == 200:
-            logger.info("Webhook post was successful!")
-        else:
-            logger.error(f"Webhook post failed with status code {response.status_code}")
-            logger.error(f"Response text: {response.text}")
-
-        sleep(8) # Sleep for 8s, so we don't spam messages when a card is held there
+        sleep(8)  # Sleep for 8s, so we don't spam messages when a card is held there
 
     sleep(0.1)
 

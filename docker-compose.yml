@@ -14,6 +14,9 @@ services:
       # - HEARTBEAT_INTERVAL=60  # seconds (default: 60, range: 10-3600)
       # Optional: Custom path for Docker health check file (default: /tmp/rfid-monitor-health)
       # - HEALTH_FILE_PATH=/tmp/rfid-monitor-health
+      # Optional: Webhook retry configuration
+      # - WEBHOOK_MAX_RETRIES=3  # max retry attempts (default: 3, range: 0-10)
+      # - WEBHOOK_RETRY_DELAY=1.0  # initial delay in seconds (default: 1.0, range: 0.1-10.0)
     devices:
       - "/dev/i2c-1:/dev/i2c-1:rwm"
     restart: unless-stopped

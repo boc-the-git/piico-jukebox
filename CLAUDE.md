@@ -48,6 +48,8 @@ Configuration validation:
 - Optional: `UPTIME_KUMA_PUSH_URL` - must be valid HTTP/HTTPS URL if provided
 - Optional: `HEARTBEAT_INTERVAL` - must be 10-3600 seconds (default: 60)
 - Optional: `HEALTH_FILE_PATH` - path for health check file (default: `/tmp/rfid-monitor-health`)
+- Optional: `WEBHOOK_MAX_RETRIES` - max retry attempts for webhooks (default: 3, range: 0-10)
+- Optional: `WEBHOOK_RETRY_DELAY` - initial retry delay in seconds (default: 1.0, range: 0.1-10.0)
 - Application exits immediately with clear error if validation fails
 
 Optional Uptime Kuma heartbeat monitoring:
@@ -69,6 +71,19 @@ Docker health check (`src/healthcheck.py`):
 - Runs every 30 seconds with 3 retries before marking unhealthy
 - Allows Docker/orchestration tools to detect and restart frozen containers
 - Configurable health file path via `HEALTH_FILE_PATH` env var (default: `/tmp/rfid-monitor-health`)
+
+Error recovery:
+- **Webhook retry logic**: Exponential backoff retry for transient errors
+  - Retries network timeouts, connection errors, and 5xx server errors
+  - Does NOT retry 4xx client errors (bad request, auth failures, not found)
+  - Configurable max retries and initial delay
+  - Logs each retry attempt with timing information
+- **RFID hardware recovery**: Detects and recovers from hardware failures
+  - Tracks consecutive RFID errors (max: 5 before reinit)
+  - Attempts hardware reinitialization on persistent failures
+  - Waits 10s between reinit attempts to avoid rapid failure loops
+  - Gracefully handles tag read failures without crashing
+- **Error classification**: Separates transient vs fatal errors for appropriate handling
 
 Deployed as a Docker container with I2C device passthrough to Raspberry Pi hardware.
 

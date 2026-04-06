@@ -40,6 +40,20 @@ class Config(BaseSettings):
         description="Path to health check status file for Docker monitoring",
     )
 
+    webhook_max_retries: int = Field(
+        default=3,
+        description="Maximum number of retry attempts for webhook calls",
+        ge=0,
+        le=10,
+    )
+
+    webhook_retry_delay: float = Field(
+        default=1.0,
+        description="Initial delay in seconds before first retry (uses exponential backoff)",
+        ge=0.1,
+        le=10.0,
+    )
+
     @field_validator("webhook_url")
     @classmethod
     def validate_webhook_url(cls, v: HttpUrl) -> HttpUrl:
