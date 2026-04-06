@@ -1,5 +1,7 @@
 import logging
 import re
+import signal
+import sys
 from time import sleep, time
 
 import requests
@@ -32,6 +34,18 @@ logger.info(f'RFID polling interval: 100ms')
 logger.info(f'Tag read debounce: 8s')
 logger.info('=' * 60)
 
+# Shutdown flag for graceful termination
+shutdown_requested = False
+
+
+def signal_handler(signum, frame):
+    """Handle shutdown signals (SIGTERM, SIGINT) gracefully."""
+    global shutdown_requested
+    signal_name = signal.Signals(signum).name
+    logger.info(f'Received {signal_name}, initiating graceful shutdown...')
+    shutdown_requested = True
+
+
 def send_heartbeat():
     """Send heartbeat to Uptime Kuma. Failures are logged but don't raise exceptions."""
     if not config.uptime_kuma_push_url:
@@ -51,11 +65,15 @@ def send_heartbeat():
 
 rfid = PiicoDev_RFID()   # Initialise the RFID module
 
+# Register signal handlers for graceful shutdown
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
+
 last_heartbeat = 0  # Track last heartbeat time
 
 logger.info('RFID Monitor running')
 
-while True:
+while not shutdown_requested:
     if rfid.tagPresent():    # if an RFID tag is present
         logger.info('Tag detected. Reading..')
         tag_id = rfid.readID()
@@ -98,3 +116,14 @@ while True:
         if current_time - last_heartbeat >= config.heartbeat_interval:
             send_heartbeat()
             last_heartbeat = current_time
+
+# Cleanup on shutdown
+logger.info('Shutting down RFID Monitor...')
+
+# Send final heartbeat to signal shutdown
+if config.uptime_kuma_push_url:
+    logger.info('Sending final heartbeat...')
+    send_heartbeat()
+
+logger.info('Shutdown complete')
+sys.exit(0)

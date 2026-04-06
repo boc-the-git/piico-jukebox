@@ -25,10 +25,12 @@ No test or lint commands are currently configured.
 
 Main application (`src/rfid-monitor.py`) with configuration module (`src/config.py`):
 1. Validates configuration on startup using pydantic-settings
-2. Initializes PiicoDev RFID hardware via I2C (`/dev/i2c-1`)
-3. Polls for RFID tags in an infinite loop (100ms hardware polling)
-4. On tag detection, POSTs to Home Assistant webhook with tag ID
-5. Implements 8-second debounce between successful reads
+2. Registers signal handlers for graceful shutdown (SIGTERM, SIGINT)
+3. Initializes PiicoDev RFID hardware via I2C (`/dev/i2c-1`)
+4. Polls for RFID tags in main loop (100ms hardware polling)
+5. On tag detection, POSTs to Home Assistant webhook with tag ID
+6. Implements 8-second debounce between successful reads
+7. On shutdown signal, exits loop cleanly and sends final heartbeat
 
 Configuration validation:
 - Required: `WEBHOOK_URL` - must be valid HTTP/HTTPS URL
@@ -41,6 +43,13 @@ Optional Uptime Kuma heartbeat monitoring:
 - Time-based intervals (default 60s, configurable via HEARTBEAT_INTERVAL)
 - Failures logged but don't disrupt RFID monitoring
 - Enabled when UPTIME_KUMA_PUSH_URL environment variable is set
+
+Graceful shutdown:
+- Handles SIGTERM (Docker stop) and SIGINT (Ctrl+C) signals
+- Exits main loop cleanly without interrupting active operations
+- Sends final heartbeat to Uptime Kuma if configured
+- Logs shutdown process for observability
+- Exits with code 0 on successful shutdown
 
 Deployed as a Docker container with I2C device passthrough to Raspberry Pi hardware.
 
