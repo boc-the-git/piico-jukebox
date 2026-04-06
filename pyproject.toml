@@ -6,4 +6,6 @@ requires-python = ">=3.11"
 dependencies = [
     "piicodev==1.11.0",
     "requests==2.32.3",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
 ]

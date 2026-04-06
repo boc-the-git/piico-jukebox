@@ -6,10 +6,12 @@ services:
     image: ghcr.io/boc-the-git/piico-jukebox:latest
     environment:
       - TZ=Australia/Melbourne
+      # Required: Must be valid HTTP/HTTPS URL
       - WEBHOOK_URL=http://<your ip/hostname>:8123/api/webhook/nfc-tag-scanned-
       # Optional: Uptime Kuma heartbeat monitoring (GET requests)
+      # Must be valid HTTP/HTTPS URL if provided
       # - UPTIME_KUMA_PUSH_URL=https://uptime.example.com/api/push/YOUR_PUSH_KEY
-      # - HEARTBEAT_INTERVAL=60  # seconds (default: 60)
+      # - HEARTBEAT_INTERVAL=60  # seconds (default: 60, range: 10-3600)
     devices:
       - "/dev/i2c-1:/dev/i2c-1:rwm"
     restart: unless-stopped
