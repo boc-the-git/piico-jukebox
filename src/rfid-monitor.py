@@ -19,6 +19,8 @@ logger = logging.getLogger('rfid-monitor')
 # Load and validate configuration
 config = load_config()
 
+TAG_DEBOUNCE_SECONDS = 8
+
 # Log configuration summary
 logger.info('=' * 60)
 logger.info('RFID Monitor Configuration')
@@ -187,7 +189,6 @@ last_heartbeat = 0  # Track last heartbeat time
 last_seen = {}  # Track last successful read time per tag ID
 rfid_error_count = 0  # Track consecutive RFID errors
 MAX_RFID_ERRORS = 5  # Max consecutive errors before attempting reconnection
-TAG_DEBOUNCE_SECONDS = 8
 
 logger.info('RFID Monitor running')
 

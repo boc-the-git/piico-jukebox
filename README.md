@@ -118,7 +118,7 @@ The container requires I2C device passthrough (`/dev/i2c-1`).
 2. Continuously polls for RFID tags (100ms intervals)
 3. When a tag is detected, reads and validates the tag ID
 4. POSTs to the configured Home Assistant webhook with the tag ID
-5. Implements an 8-second debounce to prevent repeated triggers while a tag is held on the reader
+5. Implements an 8-second per-tag debounce — the same tag is suppressed for 8 seconds, but a different tag fires immediately
 
 ## License
 
