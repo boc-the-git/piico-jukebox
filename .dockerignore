@@ -1,0 +1,11 @@
+.git
+.env
+.env.example
+.venv
+.pytest_cache
+htmlcov
+*.tar
+*.md
+docs/
+home-assistant/
+docker-compose.yml
