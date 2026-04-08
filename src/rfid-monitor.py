@@ -132,8 +132,6 @@ def send_webhook_with_retry(url, tag_id):
             logger.error(f"Unexpected error sending webhook: {e}")
             return False
 
-    return False
-
 
 def send_heartbeat():
     """Send heartbeat to Uptime Kuma. Failures are logged but don't raise exceptions."""
