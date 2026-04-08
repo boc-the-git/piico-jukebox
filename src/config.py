@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from pydantic import Field, HttpUrl, field_validator
+from pydantic import Field, HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -53,22 +53,6 @@ class Config(BaseSettings):
         ge=0.1,
         le=10.0,
     )
-
-    @field_validator("webhook_url")
-    @classmethod
-    def validate_webhook_url(cls, v: HttpUrl) -> HttpUrl:
-        """Ensure webhook URL uses http or https scheme."""
-        if v.scheme not in ("http", "https"):
-            raise ValueError(f"Webhook URL must use http or https scheme, got: {v.scheme}")
-        return v
-
-    @field_validator("uptime_kuma_push_url")
-    @classmethod
-    def validate_uptime_kuma_url(cls, v: Optional[HttpUrl]) -> Optional[HttpUrl]:
-        """Ensure Uptime Kuma URL uses http or https scheme if provided."""
-        if v is not None and v.scheme not in ("http", "https"):
-            raise ValueError(f"Uptime Kuma URL must use http or https scheme, got: {v.scheme}")
-        return v
 
 
 def load_config() -> Config:
