@@ -35,8 +35,8 @@ No test or lint commands are currently configured.
 
 Main application (`src/rfid-monitor.py`) with configuration module (`src/config.py`):
 1. Validates configuration on startup using pydantic-settings
-2. Registers signal handlers for graceful shutdown (SIGTERM, SIGINT)
-3. Initializes PiicoDev RFID hardware via I2C (`/dev/i2c-1`)
+2. Initializes PiicoDev RFID hardware via I2C (`/dev/i2c-1`)
+3. Registers signal handlers for graceful shutdown (SIGTERM, SIGINT)
 4. Polls for RFID tags in main loop (100ms hardware polling)
 5. Updates health status file every iteration for Docker health checks
 6. On tag detection, POSTs to Home Assistant webhook with tag ID
@@ -81,7 +81,7 @@ Error recovery:
 - **RFID hardware recovery**: Detects and recovers from hardware failures
   - Tracks consecutive RFID errors (max: 5 before reinit)
   - Attempts hardware reinitialization on persistent failures
-  - Waits 10s between reinit attempts to avoid rapid failure loops
+  - Waits 2s before reinit attempt, then 10s if reinit itself fails
   - Gracefully handles tag read failures without crashing
 - **Error classification**: Separates transient vs fatal errors for appropriate handling
 

@@ -24,6 +24,8 @@ The application supports push-based heartbeat monitoring with Uptime Kuma.
 **Environment Variables:**
 - `UPTIME_KUMA_PUSH_URL`: Your Uptime Kuma push monitor URL (optional)
 - `HEARTBEAT_INTERVAL`: Heartbeat interval in seconds (optional, default: 60)
+- `WEBHOOK_MAX_RETRIES`: Max retry attempts for failed webhooks (optional, default: 3, range: 0-10)
+- `WEBHOOK_RETRY_DELAY`: Initial retry delay in seconds with exponential backoff (optional, default: 1.0, range: 0.1-10.0)
 
 **Setup:**
 1. In Uptime Kuma, create a new monitor with type "Push"
