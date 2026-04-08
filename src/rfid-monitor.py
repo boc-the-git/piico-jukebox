@@ -50,6 +50,14 @@ def update_health_status():
         logger.warning(f"Failed to update health status: {e}")
 
 
+def sleep_with_health_updates(duration):
+    """Sleep for duration seconds, updating health file every 100ms."""
+    end = time() + duration
+    while time() < end:
+        sleep(min(0.1, end - time()))
+        update_health_status()
+
+
 def signal_handler(signum, frame):
     """Handle shutdown signals (SIGTERM, SIGINT) gracefully."""
     global shutdown_requested
@@ -109,7 +117,7 @@ def send_webhook_with_retry(url, tag_id):
             # Server error - may retry
             if attempt < max_retries:
                 logger.warning(f"Webhook failed with status {response.status_code}, retrying in {retry_delay}s...")
-                sleep(retry_delay)
+                sleep_with_health_updates(retry_delay)
                 retry_delay *= 2  # Exponential backoff
             else:
                 logger.error(f"Webhook failed after {max_retries + 1} attempts with status {response.status_code}")
@@ -119,7 +127,7 @@ def send_webhook_with_retry(url, tag_id):
             if is_transient_error(e):
                 if attempt < max_retries:
                     logger.warning(f"Transient error ({type(e).__name__}), retrying in {retry_delay}s... (attempt {attempt + 1}/{max_retries + 1})")
-                    sleep(retry_delay)
+                    sleep_with_health_updates(retry_delay)
                     retry_delay *= 2  # Exponential backoff
                 else:
                     logger.error(f"Webhook failed after {max_retries + 1} attempts: {e}")
@@ -194,15 +202,15 @@ while not shutdown_requested:
 
         if rfid_error_count >= MAX_RFID_ERRORS:
             logger.warning("Too many consecutive RFID errors, attempting to reinitialize hardware...")
-            sleep(2)
+            sleep_with_health_updates(2)
             rfid = init_rfid()
             if rfid is None:
                 logger.error("RFID reinitialization failed. Waiting 10s before retry...")
-                sleep(10)
+                sleep_with_health_updates(10)
             else:
                 rfid_error_count = 0
         else:
-            sleep(1)  # Brief delay before retry
+            sleep_with_health_updates(1)  # Brief delay before retry
 
         continue
 
@@ -214,7 +222,7 @@ while not shutdown_requested:
         except Exception as e:
             logger.error(f"Failed to read tag: {e}")
             rfid_error_count += 1
-            sleep(1)
+            sleep_with_health_updates(1)
             continue
 
         if len(tag_id) == 0:
@@ -235,7 +243,7 @@ while not shutdown_requested:
         # Send webhook with retry logic
         send_webhook_with_retry(url, tag_id_clean)
 
-        sleep(8)  # Sleep for 8s, so we don't spam messages when a card is held there
+        sleep_with_health_updates(8)  # Sleep for 8s, so we don't spam messages when a card is held there
 
     sleep(0.1)
 
