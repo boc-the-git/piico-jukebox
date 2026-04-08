@@ -32,7 +32,7 @@ if config.uptime_kuma_push_url:
 else:
     logger.info(f'Uptime Kuma heartbeat: DISABLED')
 logger.info(f'RFID polling interval: 100ms')
-logger.info(f'Tag read debounce: 8s')
+logger.info(f'Tag read debounce: {TAG_DEBOUNCE_SECONDS}s per tag')
 logger.info('=' * 60)
 
 # Shutdown flag for graceful termination
@@ -184,8 +184,10 @@ signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
 last_heartbeat = 0  # Track last heartbeat time
+last_seen = {}  # Track last successful read time per tag ID
 rfid_error_count = 0  # Track consecutive RFID errors
 MAX_RFID_ERRORS = 5  # Max consecutive errors before attempting reconnection
+TAG_DEBOUNCE_SECONDS = 8
 
 logger.info('RFID Monitor running')
 
@@ -237,13 +239,15 @@ while not shutdown_requested:
             logger.warning(f'Invalid tag ID format: {tag_id}')
             continue
 
+        if time() - last_seen.get(tag_id_clean, 0) < TAG_DEBOUNCE_SECONDS:
+            continue
+
         url = f"{config.webhook_url}{tag_id_clean}"
         logger.info(f'url: {url}')
 
         # Send webhook with retry logic
         send_webhook_with_retry(url, tag_id_clean)
-
-        sleep_with_health_updates(8)  # Sleep for 8s, so we don't spam messages when a card is held there
+        last_seen[tag_id_clean] = time()
 
     sleep(0.1)
 

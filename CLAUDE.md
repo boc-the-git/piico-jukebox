@@ -40,7 +40,7 @@ Main application (`src/rfid-monitor.py`) with configuration module (`src/config.
 4. Polls for RFID tags in main loop (100ms hardware polling)
 5. Updates health status file every iteration for Docker health checks
 6. On tag detection, POSTs to Home Assistant webhook with tag ID
-7. Implements 8-second debounce between successful reads
+7. Implements 8-second per-tag debounce (same tag suppressed for 8s, different tags fire immediately)
 8. On shutdown signal, exits loop cleanly and sends final heartbeat
 
 Configuration validation:
